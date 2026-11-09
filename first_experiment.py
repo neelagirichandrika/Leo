@@ -1,0 +1,12 @@
+import numpy as np
+print("=======================================")
+print("First Experiment")
+print("=======================================")
+numbers = np.array([1, 2, 3, 4, 5])
+print("calculation")
+print(numbers * 2)
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[5, 6], [7, 8]])
+print("matrix multiplication")
+print(A @ B)
+print("LEO is ready to go!")

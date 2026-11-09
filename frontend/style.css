@@ -1,0 +1,261 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #212121;
+    color: #ffffff;
+    height: 100vh;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    width: 250px;
+    background: #171717;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.logo,
+.welcome-logo {
+    width: 38px;
+    height: 38px;
+    background: #ffffff;
+    color: #171717;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 22px;
+}
+
+.brand h2 {
+    font-size: 22px;
+}
+
+.new-chat {
+    padding: 12px;
+    border: 1px solid #444;
+    background: transparent;
+    color: white;
+    border-radius: 9px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 14px;
+}
+
+.new-chat:hover {
+    background: #303030;
+}
+
+.sidebar-info {
+    margin-top: 25px;
+    color: #999;
+    font-size: 13px;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #ddd;
+}
+
+.sidebar-bottom small {
+    color: #888;
+}
+
+/* MAIN AREA */
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.topbar {
+    height: 65px;
+    border-bottom: 1px solid #383838;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+}
+
+.topbar h3 {
+    font-size: 17px;
+}
+
+.status {
+    color: #aaa;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #36c77b;
+    border-radius: 50%;
+}
+
+/* CHAT MESSAGES */
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 35px 20px;
+}
+
+.welcome-screen {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 15px;
+}
+
+.welcome-logo {
+    width: 60px;
+    height: 60px;
+    font-size: 32px;
+    border-radius: 18px;
+}
+
+.welcome-screen h1 {
+    font-size: 28px;
+}
+
+.welcome-screen p {
+    color: #aaa;
+    font-size: 14px;
+}
+
+/* MESSAGE BUBBLES */
+
+.message-row {
+    max-width: 800px;
+    margin: 0 auto 25px;
+    display: flex;
+    gap: 14px;
+}
+
+.message-avatar {
+    min-width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #444;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+}
+
+.message-content {
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.message-role {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+/* INPUT AREA */
+
+.chat-footer {
+    padding: 15px 20px 20px;
+}
+
+.input-container {
+    max-width: 800px;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #303030;
+    border: 1px solid #555;
+    border-radius: 18px;
+    padding: 12px 15px;
+}
+
+.input-container textarea {
+    flex: 1;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: white;
+    font-family: inherit;
+    font-size: 15px;
+    max-height: 140px;
+}
+
+.input-container textarea::placeholder {
+    color: #999;
+}
+
+.input-container button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 10px;
+    background: white;
+    color: black;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.input-container button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.disclaimer {
+    color: #888;
+    font-size: 11px;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* MOBILE */
+
+@media (max-width: 650px) {
+    .sidebar {
+        display: none;
+    }
+
+    .topbar {
+        padding: 0 18px;
+    }
+
+    .welcome-screen h1 {
+        font-size: 23px;
+    }
+}
