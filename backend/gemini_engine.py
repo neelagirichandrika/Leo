@@ -1,5 +1,6 @@
 
 import os
+import asyncio
 import httpx
 
 
@@ -64,6 +65,9 @@ class GeminiEngine:
             "Content-Type": "application/json"
         }
 
+        retryable_statuses = {429, 500, 502, 503, 504}
+        delays = [2, 4, 8]
+
         try:
 
             async with httpx.AsyncClient(
@@ -73,40 +77,70 @@ class GeminiEngine:
                 )
             ) as client:
 
-                response = await client.post(
-                    self.api_url,
-                    headers=headers,
-                    json=payload
-                )
+                for attempt in range(4):
 
-                response.raise_for_status()
+                    try:
 
-                result = response.json()
+                        response = await client.post(
+                            self.api_url,
+                            headers=headers,
+                            json=payload
+                        )
 
-                candidates = result.get(
-                    "candidates", []
-                )
+                        response.raise_for_status()
 
-                if not candidates:
-                    raise RuntimeError(
-                        "Gemini returned no response candidates."
-                    )
+                        result = response.json()
 
-                parts = candidates[0].get(
-                    "content", {}
-                ).get("parts", [])
+                        candidates = result.get(
+                            "candidates", []
+                        )
 
-                answer = "".join(
-                    part.get("text", "")
-                    for part in parts
-                ).strip()
+                        if not candidates:
+                            raise RuntimeError(
+                                "Gemini returned no response candidates."
+                            )
 
-                if not answer:
-                    raise RuntimeError(
-                        "Gemini returned an empty response."
-                    )
+                        parts = candidates[0].get(
+                            "content", {}
+                        ).get("parts", [])
 
-                return answer
+                        answer = "".join(
+                            part.get("text", "")
+                            for part in parts
+                        ).strip()
+
+                        if not answer:
+                            raise RuntimeError(
+                                "Gemini returned an empty response."
+                            )
+
+                        return answer
+
+                    except httpx.HTTPStatusError as error:
+
+                        status = error.response.status_code
+
+                        if status not in retryable_statuses:
+                            raise RuntimeError(
+                                f"Gemini API returned HTTP {status}: "
+                                f"{error.response.text[:500]}"
+                            ) from error
+
+                        if attempt == 3:
+                            raise RuntimeError(
+                                f"Gemini is unavailable after 4 attempts. "
+                                f"HTTP {status}: "
+                                f"{error.response.text[:300]}"
+                            ) from error
+
+                        delay = delays[attempt]
+
+                        print(
+                            f"Gemini returned HTTP {status}. "
+                            f"Retrying in {delay} seconds..."
+                        )
+
+                        await asyncio.sleep(delay)
 
         except httpx.ConnectError as error:
 
@@ -118,12 +152,4 @@ class GeminiEngine:
 
             raise RuntimeError(
                 "Gemini API request timed out."
-            ) from error
-
-        except httpx.HTTPStatusError as error:
-
-            raise RuntimeError(
-                f"Gemini API returned HTTP "
-                f"{error.response.status_code}: "
-                f"{error.response.text[:500]}"
             ) from error
