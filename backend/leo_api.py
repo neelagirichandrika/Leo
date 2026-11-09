@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     if provider == "gemini":
 
         engine = GeminiEngine(
-            model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+           model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
         )
 
         model_name = engine.model
