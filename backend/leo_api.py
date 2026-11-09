@@ -1,11 +1,16 @@
-from fastapi.middleware.cors import CORSMiddleware
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from backend.leo_engine import LeoEngine
+from backend.ollama_engine import OllamaEngine
 
+
+# ==========================================
+# LEO - INTELLIGENCE ENGINE
+# ==========================================
 
 engine = None
 
@@ -19,11 +24,19 @@ async def lifespan(app: FastAPI):
 
     global engine
 
-    engine = LeoEngine()
+    engine = OllamaEngine(
+        model="qwen3.5:4b",
+        base_url="http://localhost:11434"
+    )
+
+    print("LEO intelligence engine initialized.")
+    print("Primary model: Qwen3.5 4B")
 
     yield
 
     engine = None
+
+    print("LEO intelligence engine stopped.")
 
 
 # ==========================================
@@ -32,10 +45,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="LEO AI API",
-    description="Backend API for the LEO language model",
-    version="1.0.0",
+    description="LEO AI assistant powered by Qwen3.5",
+    version="2.0.0",
     lifespan=lifespan
 )
+
+
+# ==========================================
+# CORS CONFIGURATION
+# ==========================================
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -46,6 +65,7 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+
 
 # ==========================================
 # REQUEST STRUCTURE
@@ -59,13 +79,13 @@ class ChatRequest(BaseModel):
     )
 
     max_new_tokens: int = Field(
-        default=100,
+        default=150,
         ge=1,
-        le=150
+        le=1000
     )
 
     temperature: float = Field(
-        default=0.8,
+        default=0.4,
         gt=0,
         le=2.0
     )
@@ -90,7 +110,9 @@ def home():
 
     return {
         "application": "LEO AI",
-        "status": "running"
+        "status": "running",
+        "intelligence_engine": "Ollama",
+        "model": "qwen3.5:4b"
     }
 
 
@@ -103,7 +125,9 @@ def health():
 
     return {
         "status": "healthy",
-        "model_loaded": engine is not None
+        "model_loaded": engine is not None,
+        "intelligence_engine": "Ollama",
+        "model": "qwen3.5:4b"
     }
 
 
@@ -112,17 +136,18 @@ def health():
 # ==========================================
 
 @app.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest):
+async def chat(request: ChatRequest):
 
     if engine is None:
+
         raise HTTPException(
             status_code=503,
-            detail="LEO model is not loaded."
+            detail="LEO intelligence engine is not initialized."
         )
 
     try:
 
-        response = engine.generate_response(
+        response = await engine.generate_response(
             prompt=request.message,
             max_new_tokens=request.max_new_tokens,
             temperature=request.temperature
@@ -137,5 +162,12 @@ def chat(request: ChatRequest):
 
         raise HTTPException(
             status_code=400,
+            detail=str(error)
+        )
+
+    except RuntimeError as error:
+
+        raise HTTPException(
+            status_code=503,
             detail=str(error)
         )

@@ -1,13 +1,30 @@
-@'
+# Python environment
 .venv/
 __pycache__/
 *.py[cod]
+
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
+
+# Python testing and linting
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Operating system files
 .DS_Store
 Thumbs.db
-'@ | Set-Content -Encoding utf8 .gitignore
+
+# Model checkpoints and weights
+*.pth
+*.pt
+*.safetensors
+*.gguf
+
+# Logs
+*.log
+
+# IDE
+.vscode/

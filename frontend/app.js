@@ -1,4 +1,5 @@
-const API_URL = "http://127.0.0.1:8000";
+
+const API_URL = "http://127.0.0.1:8001";
 
 const chatForm = document.getElementById("chat-form");
 const messageInput = document.getElementById("message-input");
@@ -6,13 +7,10 @@ const chatMessages = document.getElementById("chat-messages");
 const sendButton = document.getElementById("send-button");
 const newChatButton = document.getElementById("new-chat");
 
-let conversationStarted = false;
-
 
 // CREATE MESSAGE BUBBLE
 
 function addMessage(role, content) {
-
     const welcome = document.getElementById("welcome-screen");
 
     if (welcome) {
@@ -51,39 +49,41 @@ function addMessage(role, content) {
 // SEND MESSAGE TO LEO
 
 async function sendMessage(message) {
-
     addMessage("You", message);
 
     sendButton.disabled = true;
 
     try {
+        const response = await fetch(`${API_URL}/chat`, {
+            method: "POST",
 
-        const response = await fetch(
-            `${API_URL}/chat`,
-            {
-                method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify({
-                    message: message,
-                    max_new_tokens: 100,
-                    temperature: 0.8
-                })
-            }
-        );
+            body: JSON.stringify({
+                message: message,
+                max_new_tokens: 150,
+                temperature: 0.4
+            })
+        });
 
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.detail || "Request failed.");
+            throw new Error(
+                data.detail || `Server error: ${response.status}`
+            );
+        }
+
+        if (!data.response) {
+            throw new Error("LEO returned an empty response.");
         }
 
         addMessage("LEO", data.response);
 
     } catch (error) {
+        console.error("LEO API Error:", error);
 
         addMessage(
             "LEO",
@@ -91,7 +91,6 @@ async function sendMessage(message) {
         );
 
     } finally {
-
         sendButton.disabled = false;
         messageInput.focus();
     }
@@ -101,7 +100,6 @@ async function sendMessage(message) {
 // FORM SUBMISSION
 
 chatForm.addEventListener("submit", async function(event) {
-
     event.preventDefault();
 
     const message = messageInput.value.trim();
@@ -111,16 +109,15 @@ chatForm.addEventListener("submit", async function(event) {
     }
 
     messageInput.value = "";
+    messageInput.style.height = "auto";
 
     await sendMessage(message);
-
 });
 
 
 // NEW CHAT
 
 newChatButton.addEventListener("click", function() {
-
     chatMessages.innerHTML = `
         <div class="welcome-screen" id="welcome-screen">
             <div class="welcome-logo">L</div>
@@ -129,22 +126,19 @@ newChatButton.addEventListener("click", function() {
         </div>
     `;
 
-    conversationStarted = false;
     messageInput.value = "";
+    messageInput.style.height = "auto";
     messageInput.focus();
-
 });
 
 
 // AUTO-RESIZE INPUT
 
 messageInput.addEventListener("input", function() {
-
     this.style.height = "auto";
 
     this.style.height = Math.min(
         this.scrollHeight,
         140
     ) + "px";
-
 });
