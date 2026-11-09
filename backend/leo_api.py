@@ -1,4 +1,5 @@
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -6,13 +7,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from backend.ollama_engine import OllamaEngine
+from backend.gemini_engine import GeminiEngine
 
 
 # ==========================================
-# LEO - INTELLIGENCE ENGINE
+# LEO - CONFIGURABLE INTELLIGENCE ENGINE
 # ==========================================
 
 engine = None
+provider = os.getenv("LEO_PROVIDER", "ollama").lower().strip()
+model_name = None
 
 
 # ==========================================
@@ -21,16 +25,37 @@ engine = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global engine, provider, model_name
 
-    global engine
+    if provider == "gemini":
 
-    engine = OllamaEngine(
-        model="qwen3.5:4b",
-        base_url="http://localhost:11434"
-    )
+        engine = GeminiEngine(
+            model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        )
 
-    print("LEO intelligence engine initialized.")
-    print("Primary model: Qwen3.5 4B")
+        model_name = engine.model
+
+        print("LEO intelligence engine initialized.")
+        print("Provider: Gemini")
+        print(f"Model: {model_name}")
+
+    elif provider == "ollama":
+
+        engine = OllamaEngine(
+            model="qwen3.5:4b",
+            base_url="http://localhost:11434"
+        )
+
+        model_name = "qwen3.5:4b"
+
+        print("LEO intelligence engine initialized.")
+        print("Provider: Ollama")
+        print(f"Model: {model_name}")
+
+    else:
+        raise RuntimeError(
+            f"Unsupported LEO_PROVIDER: {provider}"
+        )
 
     yield
 
@@ -45,8 +70,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="LEO AI API",
-    description="LEO AI assistant powered by Qwen3.5",
-    version="2.0.0",
+    description="LEO AI assistant with configurable AI providers.",
+    version="3.0.0",
     lifespan=lifespan
 )
 
@@ -59,7 +84,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://127.0.0.1:5500",
-        "http://localhost:5500"
+        "http://localhost:5500",
+        "https://neelagirichandrika.github.io"
     ],
     allow_credentials=False,
     allow_methods=["GET", "POST"],
@@ -111,8 +137,8 @@ def home():
     return {
         "application": "LEO AI",
         "status": "running",
-        "intelligence_engine": "Ollama",
-        "model": "qwen3.5:4b"
+        "intelligence_engine": provider,
+        "model": model_name
     }
 
 
@@ -126,8 +152,8 @@ def health():
     return {
         "status": "healthy",
         "model_loaded": engine is not None,
-        "intelligence_engine": "Ollama",
-        "model": "qwen3.5:4b"
+        "intelligence_engine": provider,
+        "model": model_name
     }
 
 
