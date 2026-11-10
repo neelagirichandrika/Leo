@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from backend.ollama_engine import OllamaEngine
 from backend.gemini_engine import GeminiEngine
+from backend.groq_engine import GroqEngine
 
 
 # ==========================================
@@ -15,7 +16,7 @@ from backend.gemini_engine import GeminiEngine
 # ==========================================
 
 engine = None
-provider = os.getenv("LEO_PROVIDER", "ollama").lower().strip()
+provider = os.getenv("LEO_PROVIDER", "groq").lower().strip()
 model_name = None
 
 
@@ -27,17 +28,27 @@ model_name = None
 async def lifespan(app: FastAPI):
     global engine, provider, model_name
 
-    if provider == "gemini":
+    if provider == "groq":
 
-        engine = GeminiEngine(
-           model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+        engine = GroqEngine(
+            model=os.getenv(
+                "GROQ_MODEL",
+                "openai/gpt-oss-20b"
+            )
         )
 
         model_name = engine.model
 
-        print("LEO intelligence engine initialized.")
-        print("Provider: Gemini")
-        print(f"Model: {model_name}")
+    elif provider == "gemini":
+
+        engine = GeminiEngine(
+            model=os.getenv(
+                "GEMINI_MODEL",
+                "gemini-3.8-flash"
+            )
+        )
+
+        model_name = engine.model
 
     elif provider == "ollama":
 
@@ -48,14 +59,14 @@ async def lifespan(app: FastAPI):
 
         model_name = "qwen3.5:4b"
 
-        print("LEO intelligence engine initialized.")
-        print("Provider: Ollama")
-        print(f"Model: {model_name}")
-
     else:
         raise RuntimeError(
             f"Unsupported LEO_PROVIDER: {provider}"
         )
+
+    print("LEO intelligence engine initialized.")
+    print(f"Provider: {provider}")
+    print(f"Model: {model_name}")
 
     yield
 
@@ -71,7 +82,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="LEO AI API",
     description="LEO AI assistant with configurable AI providers.",
-    version="3.0.0",
+    version="4.0.0",
     lifespan=lifespan
 )
 
