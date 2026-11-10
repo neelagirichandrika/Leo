@@ -52,8 +52,10 @@ class GroqEngine:
                     "content": prompt
                 }
             ],
-            "max_tokens": max_new_tokens,
+            "max_completion_tokens": max(max_new_tokens, 2048),
             "temperature": temperature,
+            "reasoning_effort": "low",
+            "include_reasoning": False,
             "stream": False
         }
 
@@ -63,10 +65,11 @@ class GroqEngine:
         }
 
         try:
+
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(
                     connect=15.0,
-                    read=90.0,
+                    read=120.0,
                     write=30.0,
                     pool=15.0
                 )
@@ -89,31 +92,50 @@ class GroqEngine:
                         "Groq returned no response choices."
                     )
 
-                answer = (
-                    choices[0]
-                    .get("message", {})
-                    .get("content", "")
-                    .strip()
-                )
+                choice = choices[0]
+                message = choice.get("message", {})
+
+                answer = message.get("content")
+
+                if isinstance(answer, list):
+                    answer = "\n".join(
+                        item.get("text", "")
+                        for item in answer
+                        if isinstance(item, dict)
+                    )
+
+                if not isinstance(answer, str):
+                    answer = ""
+
+                answer = answer.strip()
 
                 if not answer:
+                    finish_reason = choice.get(
+                        "finish_reason", "unknown"
+                    )
+
                     raise RuntimeError(
-                        "Groq returned an empty response."
+                        "Groq returned no text. "
+                        f"Finish reason: {finish_reason}. "
+                        f"Model: {self.model}."
                     )
 
                 return answer
 
         except httpx.TimeoutException as error:
+
             raise RuntimeError(
                 "Groq API request timed out."
             ) from error
 
         except httpx.ConnectError as error:
+
             raise RuntimeError(
                 "Cannot connect to Groq API."
             ) from error
 
         except httpx.HTTPStatusError as error:
+
             raise RuntimeError(
                 f"Groq API returned HTTP "
                 f"{error.response.status_code}: "

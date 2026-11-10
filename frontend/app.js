@@ -1,11 +1,17 @@
 
-const API_URL = "https://leo-qmta.onrender.com";
+const API_URL = "http://127.0.0.1:8001";
 
 const chatForm = document.getElementById("chat-form");
 const messageInput = document.getElementById("message-input");
 const chatMessages = document.getElementById("chat-messages");
 const sendButton = document.getElementById("send-button");
 const newChatButton = document.getElementById("new-chat");
+
+// ==========================================
+// CONVERSATION MEMORY
+// ==========================================
+
+let conversationId = null;
 
 
 // ==========================================
@@ -70,9 +76,15 @@ async function sendMessage(message) {
             },
 
             body: JSON.stringify({
+
                 message: message,
+
+                conversation_id: conversationId,
+
                 max_new_tokens: 150,
+
                 temperature: 0.4
+
             })
 
         });
@@ -94,6 +106,9 @@ async function sendMessage(message) {
             );
 
         }
+
+        // Save the ID returned by the backend.
+        conversationId = data.conversation_id;
 
         addMessage("LEO", data.response);
 
@@ -143,6 +158,10 @@ chatForm.addEventListener("submit", async function(event) {
 
 newChatButton.addEventListener("click", function() {
 
+    // Reset conversation memory.
+    conversationId = null;
+
+    // Restore welcome screen.
     chatMessages.innerHTML = `
         <div class="welcome-screen" id="welcome-screen">
             <div class="welcome-logo">L</div>
