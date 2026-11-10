@@ -31,6 +31,12 @@ class GeminiEngine:
             "Do not invent facts. If you are uncertain, say so."
         )
 
+        self.retryable_statuses = {
+            429, 500, 502, 503, 504
+        }
+
+        self.max_attempts = 2
+
     async def generate_response(
         self,
         prompt,
@@ -56,7 +62,8 @@ class GeminiEngine:
                 }
             ],
             "generationConfig": {
-                "maxOutputTokens": max_new_tokens
+                "maxOutputTokens": max_new_tokens,
+                "temperature": temperature
             }
         }
 
@@ -65,91 +72,116 @@ class GeminiEngine:
             "Content-Type": "application/json"
         }
 
-        retryable_statuses = {429, 500, 502, 503, 504}
-        delays = [2, 4, 8]
+        timeout = httpx.Timeout(
+            connect=15.0,
+            read=120.0,
+            write=30.0,
+            pool=15.0
+        )
 
-        try:
+        async with httpx.AsyncClient(
+            timeout=timeout
+        ) as client:
 
-            async with httpx.AsyncClient(
-                timeout=httpx.Timeout(
-                    90.0,
-                    connect=10.0
-                )
-            ) as client:
+            for attempt in range(1, self.max_attempts + 1):
 
-                for attempt in range(4):
+                try:
 
-                    try:
+                    print(
+                        f"Sending request to Gemini "
+                        f"(attempt {attempt}/{self.max_attempts})..."
+                    )
 
-                        response = await client.post(
-                            self.api_url,
-                            headers=headers,
-                            json=payload
-                        )
+                    response = await client.post(
+                        self.api_url,
+                        headers=headers,
+                        json=payload
+                    )
 
-                        response.raise_for_status()
+                    if response.status_code in self.retryable_statuses:
 
-                        result = response.json()
+                        if attempt < self.max_attempts:
 
-                        candidates = result.get(
-                            "candidates", []
-                        )
-
-                        if not candidates:
-                            raise RuntimeError(
-                                "Gemini returned no response candidates."
+                            print(
+                                f"Gemini returned HTTP "
+                                f"{response.status_code}. Retrying..."
                             )
 
-                        parts = candidates[0].get(
-                            "content", {}
-                        ).get("parts", [])
+                            await asyncio.sleep(3)
+                            continue
 
-                        answer = "".join(
-                            part.get("text", "")
-                            for part in parts
-                        ).strip()
-
-                        if not answer:
-                            raise RuntimeError(
-                                "Gemini returned an empty response."
-                            )
-
-                        return answer
-
-                    except httpx.HTTPStatusError as error:
-
-                        status = error.response.status_code
-
-                        if status not in retryable_statuses:
-                            raise RuntimeError(
-                                f"Gemini API returned HTTP {status}: "
-                                f"{error.response.text[:500]}"
-                            ) from error
-
-                        if attempt == 3:
-                            raise RuntimeError(
-                                f"Gemini is unavailable after 4 attempts. "
-                                f"HTTP {status}: "
-                                f"{error.response.text[:300]}"
-                            ) from error
-
-                        delay = delays[attempt]
-
-                        print(
-                            f"Gemini returned HTTP {status}. "
-                            f"Retrying in {delay} seconds..."
+                        raise RuntimeError(
+                            f"Gemini unavailable. HTTP "
+                            f"{response.status_code}: "
+                            f"{response.text[:500]}"
                         )
 
-                        await asyncio.sleep(delay)
+                    response.raise_for_status()
 
-        except httpx.ConnectError as error:
+                    result = response.json()
 
-            raise RuntimeError(
-                "Cannot connect to Gemini API."
-            ) from error
+                    candidates = result.get("candidates", [])
 
-        except httpx.TimeoutException as error:
+                    if not candidates:
 
-            raise RuntimeError(
-                "Gemini API request timed out."
-            ) from error
+                        raise RuntimeError(
+                            "Gemini returned no response candidates. "
+                            f"Details: {result.get('promptFeedback', {})}"
+                        )
+
+                    parts = candidates[0].get(
+                        "content", {}
+                    ).get("parts", [])
+
+                    answer = "".join(
+                        part.get("text", "")
+                        for part in parts
+                    ).strip()
+
+                    if not answer:
+
+                        raise RuntimeError(
+                            "Gemini returned an empty response."
+                        )
+
+                    print("Gemini response received successfully.")
+
+                    return answer
+
+                except httpx.TimeoutException as error:
+
+                    print(
+                        f"Gemini request timed out "
+                        f"(attempt {attempt})."
+                    )
+
+                    if attempt == self.max_attempts:
+
+                        raise RuntimeError(
+                            "Gemini timed out after "
+                            f"{self.max_attempts} attempts. "
+                            "The AI provider may be overloaded."
+                        ) from error
+
+                    await asyncio.sleep(3)
+
+                except httpx.ConnectError as error:
+
+                    if attempt == self.max_attempts:
+
+                        raise RuntimeError(
+                            "Cannot connect to Gemini API after "
+                            f"{self.max_attempts} attempts."
+                        ) from error
+
+                    print("Gemini connection failed. Retrying...")
+                    await asyncio.sleep(3)
+
+                except httpx.HTTPStatusError as error:
+
+                    status = error.response.status_code
+
+                    raise RuntimeError(
+                        f"Gemini API returned HTTP {status}: "
+                        f"{error.response.text[:500]}"
+                    ) from error
