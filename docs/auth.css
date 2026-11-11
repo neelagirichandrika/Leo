@@ -1,0 +1,217 @@
+
+/* =================================
+   LEO AUTHENTICATION PAGES
+================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #212121;
+    color: #ffffff;
+    min-height: 100vh;
+}
+
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 25px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: #171717;
+    border: 1px solid #383838;
+    border-radius: 16px;
+    padding: 35px;
+}
+
+.auth-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.auth-logo {
+    width: 42px;
+    height: 42px;
+    background: #ffffff;
+    color: #171717;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.auth-brand h1 {
+    font-size: 25px;
+}
+
+.auth-heading {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.auth-heading h2 {
+    font-size: 24px;
+    margin-bottom: 9px;
+}
+
+.auth-heading p {
+    color: #999999;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 13px;
+    color: #dddddd;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 13px 14px;
+    background: #262626;
+    border: 1px solid #454545;
+    border-radius: 9px;
+    outline: none;
+    color: #ffffff;
+    font-size: 14px;
+}
+
+.form-group input:focus {
+    border-color: #ffffff;
+}
+
+.form-group input::placeholder {
+    color: #777777;
+}
+
+.auth-button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 5px;
+    background: #ffffff;
+    color: #171717;
+    border: none;
+    border-radius: 9px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.auth-button:hover {
+    background: #dddddd;
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 23px;
+    font-size: 13px;
+    color: #999999;
+}
+
+.auth-switch a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
+.auth-message {
+    font-size: 13px;
+    text-align: center;
+    color: #ff8585;
+    min-height: 16px;
+}
+
+.auth-footer {
+    text-align: center;
+    color: #777777;
+    font-size: 11px;
+    margin-top: 25px;
+}
+
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 25px 20px;
+    }
+}
+
+/* WELCOME PAGE + AUTH PAGE LAYOUT FIX */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #212121;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.auth-container {
+    width: min(420px, 90%);
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+    background: #2b2b2b;
+    border: 1px solid #444;
+    border-radius: 16px;
+}
+
+.auth-container h1,
+.auth-container p {
+    text-align: center;
+    margin: 0;
+}
+
+.auth-button {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    text-align: center;
+    text-decoration: none;
+    background: #ffffff;
+    color: #171717;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.auth-button:hover {
+    background: #dddddd;
+}

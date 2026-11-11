@@ -1,128 +1,19 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>LEO AI Assistant</title>
-
-    <link rel="stylesheet" href="style.css">
+    <title>Welcome to LEO</title>
+    <link rel="stylesheet" href="auth.css">
 </head>
-
 <body>
+    <main class="auth-container">
+        <h1>Welcome to LEO</h1>
+        <p>Your personal AI assistant.</p>
 
-    <div class="app-container">
-
-        <aside class="sidebar">
-
-            <div class="brand">
-                <div class="logo">L</div>
-                <h2>LEO</h2>
-            </div>
-
-            <button id="new-chat" class="new-chat">
-                + New chat
-            </button>
-
-            <div class="sidebar-info">
-                Your personal AI assistant
-            </div>
-
-            <div class="sidebar-bottom">
-                <span>LEO AI</span>
-                <small>Local development version</small>
-            </div>
-
-        </aside>
-
-        <main class="main-content">
-
-            <header class="topbar">
-
-                <h3>LEO Assistant</h3>
-
-                <span class="status">
-                    <span class="status-dot"></span>
-                    Gemini AI
-                </span>
-
-            </header>
-
-            <section id="chat-messages" class="chat-messages">
-
-                <div class="welcome-screen" id="welcome-screen">
-
-                    <div class="welcome-logo">L</div>
-
-                    <h1>How can I help you?</h1>
-
-                    <p>
-                        Welcome to LEO, your personal AI assistant.
-                    </p>
-
-                </div>
-
-            </section>
-
-            <footer class="chat-footer">
-
-                <!-- WEB SEARCH TOGGLE -->
-
-                <div class="search-option">
-
-                    <label class="search-toggle-label">
-
-                        <input
-                            type="checkbox"
-                            id="search-toggle"
-                        >
-
-                        <span class="search-toggle-text">
-                            <span class="search-icon">🌐</span>
-                            Search the Web
-                        </span>
-
-                    </label>
-
-                    <span class="search-description">
-                        Get answers using current web information
-                    </span>
-
-                </div>
-
-
-                <!-- CHAT INPUT -->
-
-                <form id="chat-form" class="input-container">
-
-                    <textarea
-                        id="message-input"
-                        placeholder="Message LEO..."
-                        rows="1"
-                        required
-                    ></textarea>
-
-                    <button type="submit" id="send-button">
-                        ↑
-                    </button>
-
-                </form>
-
-                <p class="disclaimer">
-                    LEO is an experimental AI assistant.
-                    Its responses may be inaccurate.
-                </p>
-
-            </footer>
-
-        </main>
-
-    </div>
-
-    <script src="app.js"></script>
-
+        <a class="auth-button" href="login.html">Login</a>
+        <a class="auth-button" href="signup.html">Create Account</a>
+    </main>
 </body>
-
 </html>

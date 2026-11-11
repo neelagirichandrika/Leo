@@ -15,6 +15,9 @@ from backend.gemini_engine import GeminiEngine
 from backend.search_engine import TavilySearchEngine
 from backend.intent_router import detect_intent
 
+# NEW: Authentication router
+from backend.auth import router as auth_router
+
 
 # ==========================================
 # LOAD ENVIRONMENT VARIABLES
@@ -106,6 +109,13 @@ app = FastAPI(
     version="3.5.0",
     lifespan=lifespan
 )
+
+
+# ==========================================
+# AUTHENTICATION ROUTER
+# ==========================================
+
+app.include_router(auth_router)
 
 
 # ==========================================
