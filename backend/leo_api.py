@@ -30,6 +30,9 @@ from backend.hybrid_engine import HybridEngine
 from backend.search_engine import TavilySearchEngine
 from backend.intent_router import detect_intent
 
+# NEW: Authentication router
+from backend.auth import router as auth_router
+
 
 # ==========================================
 # LOAD ENVIRONMENT VARIABLES
