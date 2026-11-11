@@ -1,15 +1,22 @@
 
 import re
-import spacy
 
-# Load the English NLP model once when the application starts.
+# Load spaCy and its English model.
+# If unavailable, LEO can still use rule-based detection.
 try:
+    import spacy
+
     nlp = spacy.load("en_core_web_sm")
-except OSError:
+
+except (ImportError, OSError):
     nlp = None
+    print("spaCy unavailable. Using rule-based intent detection.")
 
 
-# Messages that normally need a friendly, direct response.
+# ==========================================
+# INTENT PATTERNS
+# ==========================================
+
 CONVERSATION_PATTERNS = [
     r"\bhi\b",
     r"\bhello\b",
@@ -17,6 +24,7 @@ CONVERSATION_PATTERNS = [
     r"\bgood morning\b",
     r"\bgood afternoon\b",
     r"\bgood evening\b",
+    r"\bgood night\b",
     r"\bhow are you\b",
     r"\bhow are you doing\b",
     r"\bwhat's up\b",
@@ -29,18 +37,15 @@ CONVERSATION_PATTERNS = [
     r"\btell me a joke\b",
 ]
 
-# Phrases indicating a need for current or external information.
 WEB_PATTERNS = [
     r"\blatest\b",
     r"\brecent news\b",
     r"\btoday's news\b",
     r"\btoday news\b",
-    r"\bright now\b",
-    r"\bcurrently\b",
     r"\bcurrent price\b",
     r"\bcurrent weather\b",
-    r"\bthis week\b",
-    r"\bthis month\b",
+    r"\bthis week's news\b",
+    r"\bthis month's news\b",
     r"\b2026 updates\b",
     r"\bsearch the web\b",
     r"\bsearch online\b",
@@ -49,36 +54,63 @@ WEB_PATTERNS = [
     r"\bnews about\b",
     r"\bupdates about\b",
     r"\bwhat happened today\b",
+    r"\bright now\b",
+    r"\bcurrently\b",
 ]
 
 
-def normalize_text(message):
-    """Clean and normalize the user's message."""
-    message = message.lower().strip()
-    message = re.sub(r"\s+", " ", message)
-    return message
+# ==========================================
+# TEXT NORMALIZATION
+# ==========================================
 
+def normalize_text(message):
+
+    text = message.lower().strip()
+
+    text = re.sub(r"\s+", " ", text)
+
+    return text
+
+
+# ==========================================
+# INTENT DETECTION
+# ==========================================
 
 def detect_intent(message):
     """
-    Classify the message into:
-    conversation, knowledge, or web_search.
+    Detect the user's message intent.
+
+    Returns:
+        conversation: Friendly conversation
+        knowledge: General questions and explanations
+        web_search: Current or external information
     """
 
     text = normalize_text(message)
 
-    # Friendly conversation detection.
-    for pattern in CONVERSATION_PATTERNS:
-        if re.search(pattern, text):
-            return "conversation"
+    # 1. Check for web search intent first.
+    # This prevents messages such as
+    # "Hey, show me the latest news" being
+    # classified as simple conversation.
 
-    # Explicit current-information/search detection.
     for pattern in WEB_PATTERNS:
+
         if re.search(pattern, text):
+
             return "web_search"
 
-    # Use spaCy to process the sentence.
+    # 2. Check for friendly conversation.
+
+    for pattern in CONVERSATION_PATTERNS:
+
+        if re.search(pattern, text):
+
+            return "conversation"
+
+    # 3. Process the sentence using spaCy.
+
     if nlp:
+
         doc = nlp(text)
 
         lemmas = {
@@ -87,14 +119,20 @@ def detect_intent(message):
             if not token.is_stop and not token.is_punct
         }
 
-        # Current-information signals.
         current_words = {
-            "latest", "recent", "today", "currently",
-            "update", "news", "price", "weather"
+            "latest",
+            "recent",
+            "today",
+            "update",
+            "news",
+            "price",
+            "weather",
         }
 
         if lemmas.intersection(current_words):
+
             return "web_search"
 
-    # Default: answer using Gemini's general knowledge.
+    # 4. Default to general knowledge.
+
     return "knowledge"

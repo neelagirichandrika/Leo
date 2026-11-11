@@ -7,8 +7,9 @@ const chatMessages = document.getElementById("chat-messages");
 const sendButton = document.getElementById("send-button");
 const newChatButton = document.getElementById("new-chat");
 
-// Web search toggle (we will add this in index.html)
 const searchToggle = document.getElementById("search-toggle");
+
+let isWaiting = false;
 
 
 // ==========================================
@@ -43,9 +44,7 @@ function addMessage(role, content, sources = []) {
     contentBox.appendChild(roleLabel);
     contentBox.appendChild(messageText);
 
-    // ==========================================
-    // DISPLAY WEB SOURCES
-    // ==========================================
+    // Display web sources
 
     if (role === "LEO" && Array.isArray(sources) && sources.length > 0) {
 
@@ -68,7 +67,6 @@ function addMessage(role, content, sources = []) {
 
                 const parsedUrl = new URL(source.url);
 
-                // Allow only HTTP and HTTPS links
                 if (!["http:", "https:"].includes(parsedUrl.protocol)) {
                     return;
                 }
@@ -106,16 +104,109 @@ function addMessage(role, content, sources = []) {
 
 
 // ==========================================
+// THINKING INDICATOR
+// ==========================================
+
+function showThinkingIndicator() {
+
+    removeThinkingIndicator();
+
+    const welcome = document.getElementById("welcome-screen");
+
+    if (welcome) {
+        welcome.remove();
+    }
+
+    const row = document.createElement("div");
+
+    row.className = "message-row typing-row";
+    row.id = "leo-thinking-indicator";
+
+    const avatar = document.createElement("div");
+
+    avatar.className = "message-avatar";
+    avatar.textContent = "L";
+
+    const contentBox = document.createElement("div");
+
+    const roleLabel = document.createElement("div");
+
+    roleLabel.className = "message-role";
+    roleLabel.textContent = "LEO";
+
+    const indicator = document.createElement("div");
+
+    indicator.className = "typing-indicator";
+    indicator.setAttribute("aria-live", "polite");
+
+    const status = document.createElement("span");
+
+    status.className = "typing-status";
+    status.textContent = "LEO is thinking...";
+
+    const dots = document.createElement("div");
+
+    dots.className = "typing-dots";
+
+    for (let i = 0; i < 3; i++) {
+
+        const dot = document.createElement("span");
+
+        dot.className = "typing-dot";
+
+        dots.appendChild(dot);
+    }
+
+    indicator.appendChild(status);
+    indicator.appendChild(dots);
+
+    contentBox.appendChild(roleLabel);
+    contentBox.appendChild(indicator);
+
+    row.appendChild(avatar);
+    row.appendChild(contentBox);
+
+    chatMessages.appendChild(row);
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+
+// ==========================================
+// REMOVE THINKING INDICATOR
+// ==========================================
+
+function removeThinkingIndicator() {
+
+    const indicator = document.getElementById(
+        "leo-thinking-indicator"
+    );
+
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+
+// ==========================================
 // SEND MESSAGE TO LEO
 // ==========================================
 
 async function sendMessage(message) {
 
+    if (isWaiting) {
+        return;
+    }
+
+    isWaiting = true;
+
     addMessage("You", message);
 
     sendButton.disabled = true;
 
-    // Check whether web search is enabled
+    // Show indicator immediately
+    showThinkingIndicator();
+
     const searchEnabled = searchToggle
         ? searchToggle.checked
         : false;
@@ -159,7 +250,8 @@ async function sendMessage(message) {
 
         }
 
-        // Display answer and its web sources
+        removeThinkingIndicator();
+
         addMessage(
             "LEO",
             data.response,
@@ -170,6 +262,8 @@ async function sendMessage(message) {
 
         console.error("LEO API Error:", error);
 
+        removeThinkingIndicator();
+
         addMessage(
             "LEO",
             "Unable to connect to LEO: " + error.message
@@ -177,7 +271,12 @@ async function sendMessage(message) {
 
     } finally {
 
+        removeThinkingIndicator();
+
+        isWaiting = false;
+
         sendButton.disabled = false;
+
         messageInput.focus();
 
     }
@@ -194,7 +293,7 @@ chatForm.addEventListener("submit", async function(event) {
 
     const message = messageInput.value.trim();
 
-    if (!message) {
+    if (!message || isWaiting) {
         return;
     }
 
@@ -211,6 +310,10 @@ chatForm.addEventListener("submit", async function(event) {
 // ==========================================
 
 newChatButton.addEventListener("click", function() {
+
+    if (isWaiting) {
+        return;
+    }
 
     chatMessages.innerHTML = `
         <div class="welcome-screen" id="welcome-screen">
