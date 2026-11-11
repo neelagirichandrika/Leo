@@ -1,5 +1,5 @@
 
-const API_URL = "https://leo-qmta.onrender.com";
+const API_URL = "http://127.0.0.1:8000";
 
 const chatForm = document.getElementById("chat-form");
 const messageInput = document.getElementById("message-input");
@@ -7,12 +7,15 @@ const chatMessages = document.getElementById("chat-messages");
 const sendButton = document.getElementById("send-button");
 const newChatButton = document.getElementById("new-chat");
 
+// Web search toggle (we will add this in index.html)
+const searchToggle = document.getElementById("search-toggle");
+
 
 // ==========================================
 // CREATE MESSAGE BUBBLE
 // ==========================================
 
-function addMessage(role, content) {
+function addMessage(role, content, sources = []) {
 
     const welcome = document.getElementById("welcome-screen");
 
@@ -40,6 +43,59 @@ function addMessage(role, content) {
     contentBox.appendChild(roleLabel);
     contentBox.appendChild(messageText);
 
+    // ==========================================
+    // DISPLAY WEB SOURCES
+    // ==========================================
+
+    if (role === "LEO" && Array.isArray(sources) && sources.length > 0) {
+
+        const sourcesContainer = document.createElement("div");
+        sourcesContainer.className = "message-sources";
+
+        const sourcesHeading = document.createElement("div");
+        sourcesHeading.className = "sources-heading";
+        sourcesHeading.textContent = "Sources";
+
+        sourcesContainer.appendChild(sourcesHeading);
+
+        sources.forEach((source) => {
+
+            if (!source.title || !source.url) {
+                return;
+            }
+
+            try {
+
+                const parsedUrl = new URL(source.url);
+
+                // Allow only HTTP and HTTPS links
+                if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+                    return;
+                }
+
+                const link = document.createElement("a");
+
+                link.className = "source-link";
+                link.href = parsedUrl.href;
+                link.textContent = source.title;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+
+                sourcesContainer.appendChild(link);
+
+            } catch (error) {
+
+                console.warn("Invalid source URL:", source.url);
+
+            }
+
+        });
+
+        if (sourcesContainer.children.length > 1) {
+            contentBox.appendChild(sourcesContainer);
+        }
+    }
+
     row.appendChild(avatar);
     row.appendChild(contentBox);
 
@@ -59,6 +115,11 @@ async function sendMessage(message) {
 
     sendButton.disabled = true;
 
+    // Check whether web search is enabled
+    const searchEnabled = searchToggle
+        ? searchToggle.checked
+        : false;
+
     try {
 
         const response = await fetch(`${API_URL}/chat`, {
@@ -70,9 +131,12 @@ async function sendMessage(message) {
             },
 
             body: JSON.stringify({
+
                 message: message,
-                max_new_tokens: 150,
-                temperature: 0.4
+                max_new_tokens: 300,
+                temperature: 0.4,
+                search_enabled: searchEnabled
+
             })
 
         });
@@ -95,7 +159,12 @@ async function sendMessage(message) {
 
         }
 
-        addMessage("LEO", data.response);
+        // Display answer and its web sources
+        addMessage(
+            "LEO",
+            data.response,
+            data.sources || []
+        );
 
     } catch (error) {
 
