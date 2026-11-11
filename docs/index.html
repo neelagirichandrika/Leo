@@ -1,6 +1,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +16,7 @@
     <div class="app-container">
 
         <aside class="sidebar">
+
             <div class="brand">
                 <div class="logo">L</div>
                 <h2>LEO</h2>
@@ -32,21 +34,26 @@
                 <span>LEO AI</span>
                 <small>Local development version</small>
             </div>
+
         </aside>
 
         <main class="main-content">
 
             <header class="topbar">
+
                 <h3>LEO Assistant</h3>
+
                 <span class="status">
                     <span class="status-dot"></span>
-                    Local model
+                    Gemini AI
                 </span>
+
             </header>
 
             <section id="chat-messages" class="chat-messages">
 
                 <div class="welcome-screen" id="welcome-screen">
+
                     <div class="welcome-logo">L</div>
 
                     <h1>How can I help you?</h1>
@@ -54,11 +61,39 @@
                     <p>
                         Welcome to LEO, your personal AI assistant.
                     </p>
+
                 </div>
 
             </section>
 
             <footer class="chat-footer">
+
+                <!-- WEB SEARCH TOGGLE -->
+
+                <div class="search-option">
+
+                    <label class="search-toggle-label">
+
+                        <input
+                            type="checkbox"
+                            id="search-toggle"
+                        >
+
+                        <span class="search-toggle-text">
+                            <span class="search-icon">🌐</span>
+                            Search the Web
+                        </span>
+
+                    </label>
+
+                    <span class="search-description">
+                        Get answers using current web information
+                    </span>
+
+                </div>
+
+
+                <!-- CHAT INPUT -->
 
                 <form id="chat-form" class="input-container">
 
@@ -76,7 +111,7 @@
                 </form>
 
                 <p class="disclaimer">
-                    LEO is an experimental AI model.
+                    LEO is an experimental AI assistant.
                     Its responses may be inaccurate.
                 </p>
 
@@ -89,4 +124,5 @@
     <script src="app.js"></script>
 
 </body>
+
 </html>
