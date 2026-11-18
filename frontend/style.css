@@ -68,17 +68,114 @@ body {
 }
 
 .sidebar-info {
-    margin-top: 25px;
-    color: #999;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    color: #888;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.conversation-list {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 2px;
+}
+
+.conversation-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-radius: 8px;
     font-size: 13px;
+    color: #ccc;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+}
+
+.conversation-item:hover {
+    background: #262626;
+    color: #fff;
+}
+
+.conversation-item.active {
+    background: #333333;
+    color: #fff;
+    border-color: #4a4a4a;
+}
+
+.conv-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    margin-right: 6px;
+}
+
+.delete-conv-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 4px;
+    display: none;
+}
+
+.conversation-item:hover .delete-conv-btn,
+.conversation-item.active .delete-conv-btn {
+    display: inline-block;
+}
+
+.delete-conv-btn:hover {
+    color: #ff6b6b;
+    background: #3a2222;
 }
 
 .sidebar-bottom {
     margin-top: auto;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     color: #ddd;
+    border-top: 1px solid #2d2d2d;
+    padding-top: 14px;
+}
+
+.user-display {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.logout-btn {
+    padding: 7px 10px;
+    border: 1px solid #444;
+    background: #222;
+    color: #ccc;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.logout-btn:hover {
+    background: #3a1e1e;
+    color: #ff8585;
+    border-color: #632e2e;
 }
 
 .sidebar-bottom small {
@@ -257,5 +354,122 @@ body {
 
     .welcome-screen h1 {
         font-size: 23px;
+    }
+}
+
+/* WEB SEARCH OPTION */
+
+.search-option {
+    max-width: 800px;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 8px;
+    flex-wrap: wrap;
+}
+
+.search-toggle-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.search-toggle-label input {
+    width: 16px;
+    height: 16px;
+    accent-color: #ffffff;
+    cursor: pointer;
+}
+
+.search-toggle-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.search-description {
+    font-size: 12px;
+    color: #999;
+}
+
+/* WEB SEARCH SOURCES */
+
+.message-sources {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #383838;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sources-heading {
+    font-size: 12px;
+    font-weight: 600;
+    color: #aaa;
+    margin-bottom: 2px;
+}
+
+.source-link {
+    font-size: 13px;
+    color: #ccc;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.source-link:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+/* ==========================================
+   LEO THINKING INDICATOR
+========================================== */
+
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.typing-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background: #aaa;
+    border-radius: 50%;
+    animation: leoTyping 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes leoTyping {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+
+    30% {
+        transform: translateY(-5px);
+        opacity: 1;
     }
 }
