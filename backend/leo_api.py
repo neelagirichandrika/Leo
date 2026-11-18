@@ -1,4 +1,3 @@
-
 import os
 import re
 import time
@@ -14,7 +13,7 @@ except Exception:
     pass
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Depends, Request, Response, status
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -23,15 +22,13 @@ from sqlalchemy import func
 from backend.database import get_db
 from backend.models import User, Conversation, Message
 from backend.auth import router as auth_router, get_current_user
+
 from backend.ollama_engine import OllamaEngine
 from backend.gemini_engine import GeminiEngine
 from backend.groq_engine import GroqEngine
 from backend.hybrid_engine import HybridEngine
 from backend.search_engine import TavilySearchEngine
 from backend.intent_router import detect_intent
-
-# NEW: Authentication router
-from backend.auth import router as auth_router
 
 
 # ==========================================
@@ -73,7 +70,10 @@ async def lifespan(app: FastAPI):
     if provider == "ollama":
 
         model_name = os.getenv("OLLAMA_MODEL", "llama3.2:3b").strip()
-        base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").strip()
+        base_url = os.getenv(
+            "OLLAMA_BASE_URL",
+            "http://localhost:11434"
+        ).strip()
 
         engine = OllamaEngine(
             model=model_name,
@@ -84,20 +84,31 @@ async def lifespan(app: FastAPI):
 
     elif provider == "gemini":
 
-        model_name = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
+        model_name = os.getenv(
+            "GEMINI_MODEL",
+            "gemini-3.8-flash"
+        ).strip()
+
         engine = GeminiEngine(model=model_name)
+
         logger.info("Gemini initialized: %s", model_name)
 
     elif provider == "groq":
 
-        model_name = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b").strip()
+        model_name = os.getenv(
+            "GROQ_MODEL",
+            "openai/gpt-oss-20b"
+        ).strip()
+
         engine = GroqEngine(model=model_name)
+
         logger.info("Groq initialized: %s", model_name)
 
     elif provider == "hybrid":
 
         engine = HybridEngine()
         model_name = "Gemini primary + Groq fallback"
+
         logger.info("Hybrid engine initialized")
 
     else:
@@ -112,18 +123,23 @@ async def lifespan(app: FastAPI):
 
         search_engine = TavilySearchEngine()
         web_search_enabled = True
+
         logger.info("LEO web search engine initialized.")
 
     except Exception:
 
         search_engine = None
         web_search_enabled = False
-        logger.warning("Web search engine unavailable or missing API key.")
+
+        logger.warning(
+            "Web search engine unavailable or missing API key."
+        )
 
     # Warm up NLP router
     try:
 
         detect_intent("hello")
+
         logger.info("LEO NLP intent router initialized.")
 
     except Exception:
@@ -193,7 +209,7 @@ app.add_middleware(
         "https://neelagirichandrika.github.io"
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"]
 )
 
@@ -201,6 +217,14 @@ app.add_middleware(
 # ==========================================
 # REQUEST & RESPONSE MODELS
 # ==========================================
+
+class RenameConversationRequest(BaseModel):
+
+    title: str = Field(
+        min_length=1,
+        max_length=200
+    )
+
 
 class ChatRequest(BaseModel):
 
@@ -288,8 +312,14 @@ def list_conversations(
         {
             "id": str(c.id),
             "title": c.title,
-            "created_at": c.created_at.isoformat() if c.created_at else None,
-            "updated_at": c.updated_at.isoformat() if c.updated_at else None
+            "created_at": (
+                c.created_at.isoformat()
+                if c.created_at else None
+            ),
+            "updated_at": (
+                c.updated_at.isoformat()
+                if c.updated_at else None
+            )
         }
         for c in conversations
     ]
@@ -304,7 +334,9 @@ def get_conversation_history(
 
     try:
         conv_id_int = int(conversation_id)
+
     except (ValueError, TypeError):
+
         raise HTTPException(
             status_code=400,
             detail="Invalid conversation ID."
@@ -320,6 +352,7 @@ def get_conversation_history(
     )
 
     if not conversation:
+
         raise HTTPException(
             status_code=404,
             detail="Conversation not found."
@@ -335,14 +368,23 @@ def get_conversation_history(
     return {
         "id": str(conversation.id),
         "title": conversation.title,
-        "created_at": conversation.created_at.isoformat() if conversation.created_at else None,
-        "updated_at": conversation.updated_at.isoformat() if conversation.updated_at else None,
+        "created_at": (
+            conversation.created_at.isoformat()
+            if conversation.created_at else None
+        ),
+        "updated_at": (
+            conversation.updated_at.isoformat()
+            if conversation.updated_at else None
+        ),
         "messages": [
             {
                 "id": m.id,
                 "role": m.role,
                 "content": m.content,
-                "created_at": m.created_at.isoformat() if m.created_at else None
+                "created_at": (
+                    m.created_at.isoformat()
+                    if m.created_at else None
+                )
             }
             for m in messages
         ]
@@ -358,7 +400,9 @@ def delete_conversation(
 
     try:
         conv_id_int = int(conversation_id)
+
     except (ValueError, TypeError):
+
         raise HTTPException(
             status_code=400,
             detail="Invalid conversation ID."
@@ -374,6 +418,7 @@ def delete_conversation(
     )
 
     if not conversation:
+
         raise HTTPException(
             status_code=404,
             detail="Conversation not found."
@@ -385,6 +430,120 @@ def delete_conversation(
     return {
         "status": "success",
         "message": "Conversation deleted."
+    }
+
+
+@app.patch("/conversations/{conversation_id}")
+def rename_conversation(
+    conversation_id: str,
+    data: RenameConversationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    try:
+        conv_id_int = int(conversation_id)
+
+    except (ValueError, TypeError):
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid conversation ID."
+        )
+
+    conversation = (
+        db.query(Conversation)
+        .filter(
+            Conversation.id == conv_id_int,
+            Conversation.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if not conversation:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found."
+        )
+
+    clean_title = data.title.strip()
+    if not clean_title:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Conversation title cannot be empty."
+        )
+
+    conversation.title = clean_title
+    conversation.updated_at = func.now()
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": "Conversation renamed.",
+        "id": str(conversation.id),
+        "title": conversation.title
+    }
+
+
+@app.delete("/conversations/{conversation_id}/messages/{message_id}")
+def delete_message(
+    conversation_id: str,
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    try:
+        conv_id_int = int(conversation_id)
+
+    except (ValueError, TypeError):
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid conversation ID."
+        )
+
+    conversation = (
+        db.query(Conversation)
+        .filter(
+            Conversation.id == conv_id_int,
+            Conversation.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if not conversation:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found."
+        )
+
+    message = (
+        db.query(Message)
+        .filter(
+            Message.id == message_id,
+            Message.conversation_id == conversation.id
+        )
+        .first()
+    )
+
+    if not message:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Message not found."
+        )
+
+    db.delete(message)
+    conversation.updated_at = func.now()
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": "Message deleted."
     }
 
 
@@ -450,7 +609,10 @@ FOLLOW_UP_PATTERN = re.compile(
 )
 
 
-def build_contextual_search_query(message: str, history: list[dict]) -> str:
+def build_contextual_search_query(
+    message: str,
+    history: list[dict]
+) -> str:
 
     previous_user_messages = [
         item["content"]
@@ -463,7 +625,11 @@ def build_contextual_search_query(message: str, history: list[dict]) -> str:
 
     is_follow_up = (
         FOLLOW_UP_PATTERN.search(message) is not None
-        or re.match(r"^\s*(for|about)\b", message, re.IGNORECASE) is not None
+        or re.match(
+            r"^\s*(for|about)\b",
+            message,
+            re.IGNORECASE
+        ) is not None
     )
 
     if not is_follow_up:
@@ -496,14 +662,22 @@ def build_conversation_context(history: list[dict]) -> str:
     if not context:
         return ""
 
-    return "PREVIOUS CONVERSATION:\n" + "\n".join(context) + "\n\n"
+    return (
+        "PREVIOUS CONVERSATION:\n"
+        + "\n".join(context)
+        + "\n\n"
+    )
 
 
 # ==========================================
 # BUILD WEB RESEARCH PROMPT
 # ==========================================
 
-def build_research_prompt(question: str, search_results: list[dict], history: list[dict] | None = None):
+def build_research_prompt(
+    question: str,
+    search_results: list[dict],
+    history: list[dict] | None = None
+):
 
     context_parts = []
     sources = []
@@ -558,6 +732,7 @@ Answer honestly. Explain that current web information could not be retrieved.
 You may provide general background knowledge, but clearly distinguish it from verified current information.
 Do not invent recent events, statistics, dates or sources.
 """
+
         return prompt, []
 
     search_context = "\n\n".join(context_parts)
@@ -631,7 +806,9 @@ async def chat(
 
         try:
             conv_id_int = int(request.conversation_id)
+
         except (ValueError, TypeError):
+
             raise HTTPException(
                 status_code=400,
                 detail="Invalid conversation ID."
@@ -647,6 +824,7 @@ async def chat(
         )
 
         if not conversation:
+
             raise HTTPException(
                 status_code=404,
                 detail="Conversation not found or access denied."
@@ -654,8 +832,10 @@ async def chat(
 
     else:
 
-        # Generate a clean title from the user's first message
-        title_snippet = request.message.strip().replace("\n", " ")
+        title_snippet = (
+            request.message.strip().replace("\n", " ")
+        )
+
         if len(title_snippet) > 40:
             title_snippet = title_snippet[:37] + "..."
 
@@ -663,6 +843,7 @@ async def chat(
             user_id=current_user.id,
             title=title_snippet or "New chat"
         )
+
         db.add(conversation)
         db.commit()
         db.refresh(conversation)
@@ -675,18 +856,22 @@ async def chat(
         .all()
     )
 
-    # Convert to recent history dictionaries
     history = [
-        {"role": m.role, "content": m.content}
+        {
+            "role": m.role,
+            "content": m.content
+        }
         for m in db_messages
     ][-MAX_HISTORY_MESSAGES:]
 
     try:
 
-        # 3. Detect Intent
+        # 3. Detect intent
         intent = detect_intent(request.message)
+
         logger.info(
-            "User: %s (User ID: %s, Conversation ID: %s) | Intent: %s | Prior msgs: %s",
+            "User: %s (User ID: %s, Conversation ID: %s) | "
+            "Intent: %s | Prior msgs: %s",
             current_user.email,
             current_user.id,
             conversation.id,
@@ -694,26 +879,30 @@ async def chat(
             len(history)
         )
 
-        # 4. Quick Response Layer
+        # 4. Quick response layer
         if not request.search_enabled:
 
             quick_response = get_quick_response(request.message)
 
             if quick_response is not None:
 
-                logger.info("Quick response activated for conversation %s", conversation.id)
+                logger.info(
+                    "Quick response activated for conversation %s",
+                    conversation.id
+                )
 
-                # Persist both user message and assistant reply to MySQL
                 user_msg = Message(
                     conversation_id=conversation.id,
                     role="user",
                     content=request.message
                 )
+
                 assistant_msg = Message(
                     conversation_id=conversation.id,
                     role="assistant",
                     content=quick_response
                 )
+
                 conversation.updated_at = func.now()
 
                 db.add(user_msg)
@@ -727,7 +916,7 @@ async def chat(
                     conversation_id=str(conversation.id)
                 )
 
-        # 5. Check AI Engine Status
+        # 5. Check AI engine status
         if engine is None:
 
             raise HTTPException(
@@ -738,29 +927,48 @@ async def chat(
         prompt = request.message
         sources = []
 
-        # 6. Web Research
+        # 6. Web research
         if request.search_enabled:
 
             if search_engine is None:
 
                 raise HTTPException(
                     status_code=503,
-                    detail="LEO web search engine is not initialized or unavailable."
+                    detail=(
+                        "LEO web search engine is not initialized "
+                        "or unavailable."
+                    )
                 )
 
-            search_query = build_contextual_search_query(request.message, history)
+            search_query = build_contextual_search_query(
+                request.message,
+                history
+            )
+
             logger.info("Web research query: %s", search_query)
 
-            search_results = await search_engine.search(search_query, max_results=5)
-            logger.info("Retrieved %s search results", len(search_results))
+            search_results = await search_engine.search(
+                search_query,
+                max_results=5
+            )
 
-            prompt, sources = build_research_prompt(request.message, search_results, history)
+            logger.info(
+                "Retrieved %s search results",
+                len(search_results)
+            )
+
+            prompt, sources = build_research_prompt(
+                request.message,
+                search_results,
+                history
+            )
 
         else:
 
             if history:
 
                 conv_context = build_conversation_context(history)
+
                 prompt = f"""
 You are LEO, a helpful and intelligent AI assistant.
 
@@ -775,7 +983,7 @@ USER:
 LEO:
 """
 
-        # 7. Generate Response
+        # 7. Generate response
         generation_start = time.perf_counter()
 
         if provider == "ollama":
@@ -797,29 +1005,37 @@ LEO:
 
         if not isinstance(response, str) or not response.strip():
 
-            raise RuntimeError("The AI engine returned an empty response.")
+            raise RuntimeError(
+                "The AI engine returned an empty response."
+            )
 
         generation_time = time.perf_counter() - generation_start
-        logger.info("Response generated in %.2f seconds", generation_time)
 
-        # 8. Persist Messages to MySQL Database
+        logger.info(
+            "Response generated in %.2f seconds",
+            generation_time
+        )
+
+        # 8. Persist messages to MySQL
         user_msg = Message(
             conversation_id=conversation.id,
             role="user",
             content=request.message
         )
+
         assistant_msg = Message(
             conversation_id=conversation.id,
             role="assistant",
             content=response
         )
+
         conversation.updated_at = func.now()
 
         db.add(user_msg)
         db.add(assistant_msg)
         db.commit()
 
-        # 9. Return Response
+        # 9. Return response
         return ChatResponse(
             assistant="LEO",
             response=response,
@@ -835,7 +1051,12 @@ LEO:
     except ValueError as error:
 
         db.rollback()
-        logger.warning("Invalid request: %s", error)
+
+        logger.warning(
+            "Invalid request: %s",
+            error
+        )
+
         raise HTTPException(
             status_code=400,
             detail=str(error)
@@ -844,7 +1065,12 @@ LEO:
     except RuntimeError as error:
 
         db.rollback()
-        logger.error("LEO runtime error: %s", error)
+
+        logger.error(
+            "LEO runtime error: %s",
+            error
+        )
+
         raise HTTPException(
             status_code=503,
             detail=f"LEO is temporarily unavailable: {error}"
@@ -853,7 +1079,11 @@ LEO:
     except Exception:
 
         db.rollback()
-        logger.exception("Unexpected error while processing chat.")
+
+        logger.exception(
+            "Unexpected error while processing chat."
+        )
+
         raise HTTPException(
             status_code=500,
             detail="An unexpected error occurred in LEO."

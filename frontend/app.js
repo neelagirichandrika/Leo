@@ -146,7 +146,11 @@ function renderConversationList(conversations) {
         const titleSpan = document.createElement("span");
         titleSpan.className = "conv-title";
         titleSpan.textContent = conv.title || "Untitled chat";
-        titleSpan.title = conv.title || "Untitled chat";
+        titleSpan.title = "Double-click to rename";
+        titleSpan.addEventListener("dblclick", function(event) {
+            event.stopPropagation();
+            renameConversationPrompt(conv.id, conv.title || "Untitled chat");
+        });
 
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-conv-btn";
@@ -240,6 +244,34 @@ async function deleteConversation(convId) {
 
     } catch (error) {
         console.error("Delete conversation error:", error);
+    }
+}
+
+
+async function renameConversationPrompt(convId, currentTitle) {
+    const newTitle = prompt("Enter a new title for this conversation:", currentTitle);
+    if (!newTitle || newTitle.trim() === "" || newTitle.trim() === currentTitle) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/conversations/${convId}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({ title: newTitle.trim() })
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.detail || "Failed to rename conversation.");
+        }
+
+        loadConversations();
+    } catch (error) {
+        console.error("Rename conversation error:", error);
     }
 }
 

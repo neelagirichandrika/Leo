@@ -4,6 +4,7 @@ from sqlalchemy import (
     Integer,
     BigInteger,
     String,
+    Text,
     DateTime,
     ForeignKey,
     Enum,
@@ -92,7 +93,10 @@ class Message(Base):
         nullable=False
     )
 
-    content = Column(MEDIUMTEXT, nullable=False)
+    content = Column(
+        Text().with_variant(MEDIUMTEXT, "mysql"),
+        nullable=False
+    )
 
     created_at = Column(
         DateTime,

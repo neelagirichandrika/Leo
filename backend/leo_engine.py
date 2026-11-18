@@ -1,7 +1,19 @@
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except ImportError:
+    class _MockTorch:
+        @staticmethod
+        def no_grad():
+            def decorator(fn):
+                return fn
+            return decorator
+
+    torch = _MockTorch()
+    nn = type("nn", (), {"Module": object})
+    F = None
 
 from pathlib import Path
 

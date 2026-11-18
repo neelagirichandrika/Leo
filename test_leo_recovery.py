@@ -232,6 +232,37 @@ def run_all_tests():
 
         test("List conversations for user (/conversations)", test_list_conversations)
 
+        def test_rename_conversation():
+            res = client.patch(f"/conversations/{conv_id}", json={
+                "title": "Updated Topic"
+            })
+            assert res.status_code == 200
+            data = res.json()
+            assert data["title"] == "Updated Topic"
+
+            db.rollback()
+            conv = db.query(Conversation).filter(Conversation.id == int(conv_id)).first()
+            assert conv is not None
+            assert conv.title == "Updated Topic"
+
+        test("Rename conversation (/conversations/{id})", test_rename_conversation)
+
+        def test_delete_message():
+            # Get messages to find an ID to delete
+            hist_res = client.get(f"/conversations/{conv_id}")
+            msgs = hist_res.json()["messages"]
+            assert len(msgs) > 0
+            target_msg_id = msgs[0]["id"]
+
+            del_res = client.delete(f"/conversations/{conv_id}/messages/{target_msg_id}")
+            assert del_res.status_code == 200
+
+            db.rollback()
+            msg_in_db = db.query(Message).filter(Message.id == target_msg_id).first()
+            assert msg_in_db is None
+
+        test("Delete message (/conversations/{id}/messages/{msg_id})", test_delete_message)
+
         # ----------------------------------------------------
         # 5. CROSS-USER PRIVACY & ACCESS CONTROL TESTS
         # ----------------------------------------------------
@@ -258,6 +289,14 @@ def run_all_tests():
             # Attempt to delete User 1's conversation
             del_res = client2.delete(f"/conversations/{conv_id}")
             assert del_res.status_code == 404
+
+            # Attempt to rename User 1's conversation
+            rename_res = client2.patch(f"/conversations/{conv_id}", json={"title": "Hacked Title"})
+            assert rename_res.status_code == 404
+
+            # Attempt to delete User 1's message
+            msg_del_res = client2.delete(f"/conversations/{conv_id}/messages/1")
+            assert msg_del_res.status_code == 404
 
         test("Cross-user privacy enforcement (User 2 blocked from User 1's chats)", test_cross_user_isolation)
 
